@@ -1,14 +1,16 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/fsnotify/fsnotify"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	log.Println("Monitering...")
+	log.Println("Monitoring...")
 
 	// Create a new fsnotify watcher
 	watcher, err := fsnotify.NewWatcher()
@@ -29,6 +31,20 @@ func main() {
 	// Create a new logger, writing to log.log
 	logger := log.New(file, "", log.LstdFlags)
 
+	// Open SQLite database
+	db, err := sql.Open("sqlite3", "./events.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// Create table if not exists
+	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, event TEXT, file TEXT)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	statement.Exec()
+
 	// Run a separate goroutine to watch for events
 	go func() {
 		for {
@@ -39,6 +55,15 @@ func main() {
 				}
 				log.Println("Event:", event)
 				logger.Println("Event:", event)
+
+				// Save event to SQLite database
+				statement, err := db.Prepare("INSERT INTO events (event, file) VALUES (?, ?)")
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				statement.Exec(event.Op.String(), event.Name)
+
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					log.Println("Modified file:", event.Name)
 					logger.Println("Modified file:", event.Name)
