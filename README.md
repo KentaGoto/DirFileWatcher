@@ -1,6 +1,6 @@
 # DirFileWatcher
 
-This repository contains a simple Go application that uses the fsnotify library to monitor changes in multiple directories. It outputs the events to the console and also logs them to a file named `log.log`.
+This repository contains a simple Go application that monitors changes in multiple directories using the fsnotify library. Monitored events are output to the console and simultaneously logged to a file called log.log and to the SQLite database events.db.
 
 ## Getting Started
 
@@ -41,7 +41,17 @@ directories := []string{
 go run main.go
 ```
 
-3. You should see logs printed to the console and logged to a file named `log.log` whenever an event occurs in any of the directories being monitored.
+3. Monitored events are logged to the console, to the log.log file, and to the SQLite database.
+
+## Database
+The application uses a SQLite database named `events.db`. This database contains a table named `events`, where each event is stored as a new record. The table has the following three columns:
+
+- `id`: A unique ID for the event. This is an integer that auto-increments.
+- `event`: The type of event that occurred, such as file creation, modification, or deletion.
+- `file`: The name of the file where the event occurred.
+
+## Log File
+The `log.log` file contains logs of all file change events. Whenever a new event occurs, its information is appended to this file.
 
 ## License
 
